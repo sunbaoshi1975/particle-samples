@@ -1,0 +1,19 @@
+Test Message
+
+Format:
+node-id;child-sensor-id;message-type;ack;sub-type;payload\n
+
+1. Request new node ID
+0;255;3;0;3;DTIT-is-great
+
+2. Lamp present, req ack
+0;255;0;1;3;Found Sunny
+
+3. Temperature sensor present with sensor id 1, req no ack
+0;1;0;0;6;
+
+4. Temperature set to 23.5, req no ack
+0;1;1;0;0;23.50
+
+5. Humidity set to 45, req no ack
+0;1;1;0;1;45
