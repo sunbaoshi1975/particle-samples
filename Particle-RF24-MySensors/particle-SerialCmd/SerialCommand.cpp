@@ -110,7 +110,7 @@ bool SerialCommand::readSerial()
 			#endif
 		}
 
-		IF_SERIAL_DEBUG(SERIAL("%c", inChar));   	// Echo back to serial stream
+		SERIAL("%c", inChar);   	// Echo back to serial stream
 
 		if (inChar == '\r' || inChar == '\n') {     // Check for the terminator meaning end of command string
 			IF_SERIAL_DEBUG(SERIAL_LN("Received: %s", buffer));

@@ -1,0 +1,102 @@
+curl https://api.particle.io/v1/devices?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+[
+  {
+    "id": "2d0027001647343432313031",
+    "name": "Redboard",
+    "last_app": null,
+    "last_ip_address": "206.174.180.2",
+    "last_heard": "2016-08-03T15:33:20.456Z",
+    "product_id": 8,
+    "connected": false,
+    "platform_id": 8,
+    "cellular": false,
+    "status": "normal"
+  },
+  {
+    "id": "290024001547343339383037",
+    "name": "XlightBlank",
+    "last_app": null,
+    "last_ip_address": "206.174.180.2",
+    "last_heard": "2016-08-02T17:04:45.521Z",
+    "product_id": 6,
+    "connected": false,
+    "platform_id": 6,
+    "cellular": false,
+    "status": "normal"
+  },
+  {
+    "id": "30003e001547343339383037",
+    "name": "xlight001",
+    "last_app": null,
+    "last_ip_address": "206.174.180.2",
+    "last_heard": "2016-07-25T14:39:41.698Z",
+    "product_id": 6,
+    "connected": false,
+    "platform_id": 6,
+    "cellular": false,
+    "status": "normal"
+  },
+  {
+    "id": "360031001347343339383037",
+    "name": "XlightEF001",
+    "last_app": null,
+    "last_ip_address": "183.62.204.66",
+    "last_heard": "2016-06-24T01:10:36.376Z",
+    "product_id": 6,
+    "connected": false,
+    "platform_id": 6,
+    "cellular": false,
+    "status": "normal"
+  },
+  {
+    "id": "1e003d001747343337363432",
+    "name": "Venus",
+    "last_app": null,
+    "last_ip_address": "206.174.180.2",
+    "last_heard": "2016-08-03T15:24:15.228Z",
+    "product_id": 6,
+    "connected": false,
+    "platform_id": 6,
+    "cellular": false,
+    "status": "normal"
+  }
+]
+
+curl https://api.particle.io/v1/devices/290024001547343339383037?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+Note: 5 sec timeout
+{
+  "id": "290024001547343339383037",
+  "name": "XlightBlank",
+  "last_app": null,
+  "last_ip_address": "206.174.180.2",
+  "last_heard": "2016-08-02T17:04:45.521Z",
+  "product_id": 6,
+  "connected": false,
+  "platform_id": 6,
+  "cellular": false,
+  "status": "normal",
+  "variables": null,
+  "functions": null,
+  "cc3000_patch_version": "wl0: Nov  7 2014 16:03:45 version 5.90.230.12 FWID 01-1136667b"
+}
+
+Note： online
+{
+  "id": "290024001547343339383037",
+  "name": "xlight_sbs",
+  "last_app": null,
+  "last_ip_address": "206.174.180.2",
+  "last_heard": "2016-08-05T17:03:45.584Z",
+  "product_id": 6,
+  "connected": true,
+  "platform_id": 6,
+  "cellular": false,
+  "status": "normal",
+  "variables": {
+    "LastMessage": "string"
+  },
+  "functions": [
+    "CloudCmd"
+  ],
+  "cc3000_patch_version": "wl0: Nov  7 2014 16:03:45 version 5.90.230.12 FWID 01-1136667b"
+}

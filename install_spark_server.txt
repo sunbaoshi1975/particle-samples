@@ -1,0 +1,337 @@
+-----------------------------------------
+Install Spark-server on AWS Ubuntu
+Refer to https://community.particle.io/t/tutorial-local-cloud-1st-time-instructions-01-oct-15/5589
+-----------------------------------------
+1. Install Nodejs
+sudo apt-get purge nodejs npm
+sudo apt-get update
+curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+sudo apt-get install -y nodejs
+sudo apt-get install -y build-essential
+
+# check version
+node -v
+npm -v
+
+2. Install spark-server
+git clone https://github.com/spark/spark-server.git
+cd spark-server
+sudo npm install
+
+3. Start Spark-server
+node main.js
+
+4. Download public key (default_key.pub.pem)
+local IP: 172.31.25.189
+public IP: 52.3.103.94
+listening on: 8080 (or 5683 if 8080 not available)
+
+5. Change security policy to enable port
+
+6. Install particle-cli on server
+sudo npm install -g particle-cli
+
+-----------------------------------------
+Config the private cloud on both AWS server and local
+refer to https://docs.particle.io/support/troubleshooting/cloud-solutions/photon/
+-----------------------------------------
+1. Create a new server profile for the private cloud
+particle config xlight apiUrl "http://52.3.103.94:8080"
+# particle config xlight apiUrl "http://iot.xlight.ca:8080"
+
+2. Point to the private cloud and check it
+particle config xlight
+particle config identify
+
+3. Create an account on the private cloud (only on server)
+particle setup
+-> Create new account
+sunbaoshi1975@gmail.com / 1qazxsw2
+Ctrl+C
+
+-----------------------------------------
+Point Photon to private cloud, only at local
+-----------------------------------------
+# 0. Install dfu-util, OpenSSL
+# refer to https://docs.particle.io/support/troubleshooting/troubleshooting-tools/photon/#dfu-commands
+# and http://blog.jongallant.com/2015/08/particle-photon-firmware-flash-windows.html
+
+
+1. Log on the private cloud from local with the account created just now
+particle login
+
+2. Place photon in DFU mode [flashing yellow]
+Hold SETUP -> press RESET -> Wait for flashing yellow -> release SETUP
+
+3. Backup current keys
+particle keys save 290024001547343339383037_old.der
+
+4. Change server keys to private cloud key + IP_ADDRESS
+particle keys server default_key.pub.pem 52.3.103.94
+particle keys doctor 290024001547343339383037
+#particle keys load 290024001547343339383037.der
+
+To recover, refer to: https://community.particle.io/t/photon-setup-flashing-cyan-with-a-quick-red-burst-now-orange-burst/12118/24
+particle config particle
+# no backup
+particle keys server cloud_public.der
+particle keys doctor 290024001547343339383037
+particle keys send 290024001547343339383037 290024001547343339383037_rsa_new.pub.pem
+# has backup
+particle keys load 290024001547343339383037.der
+# Workaround
+mkdir recover
+cd recover
+particle keys new
+dfu-util -d 2b04:d006 -a 1 -s 34 -D device.der
+dfu-util -d 2b04:d006 -a 1 -s 2082 -D cloud_public.der
+particle keys send 290024001547343339383037 device.pub.pem
+## then reset
+particle serial wifi
+
+
+5. Copy keys to AWS server core_keys
+#particle keys send 290024001547343339383037 290024001547343339383037.pub.pem
+particle keys send 290024001547343339383037 290024001547343339383037_rsa_new.pub.pem
+
+6. Get Access Token
+particle config identify
+
+Current profile: xlight
+Using API: http://52.3.103.94:8080
+Access token: b528b7716896b1a9667478a633b43b74d0e879c9
+
+
+7. Reset Photon
+
+-----------------------------------------
+Test, refer to https://docs.particle.io/reference/api/
+-----------------------------------------
+Access Token:
+Particle
+2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+e97a4b75d5b21afe4cab40b41e6d87e3ded1aa8a
+
+# Get Device List
+curl https://api.particle.io/v1/devices?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+curl http://iot.xlight.ca:8080/v1/devices?access_token=b528b7716896b1a9667478a633b43b74d0e879c9
+
+# Get Device Info
+curl https://api.particle.io/v1/devices/290024001547343339383037?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+curl http://iot.xlight.ca:8080/v1/devices/290024001547343339383037?access_token=b528b7716896b1a9667478a633b43b74d0e879c9
+
+# Rename a Device (device doesn't have to be online)
+curl -X PUT https://api.particle.io/v1/devices/290024001547343339383037 -d name=xlight_sbs -d access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+curl -X PUT http://iot.xlight.ca:8080/v1/devices/290024001547343339383037 -d name=xlight_sbs -d access_token=b528b7716896b1a9667478a633b43b74d0e879c9
+
+# Get a variable value
+curl https://api.particle.io/v1/devices/290024001547343339383037/lastMsg?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+curl https://api.particle.io/v1/devices/290024001547343339383037/sysID?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+
+curl http://iot.xlight.ca:8080/v1/devices/290024001547343339383037/sysID?access_token=b528b7716896b1a9667478a633b43b74d0e879c9
+
+# Call a function: PowerSwitch
+curl https://api.particle.io/v1/devices/290024001547343339383037/PowerSwitch -d arg="on" -d access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+
+
+-----------------------------------------
+Deployment: use forever or PM2, combine with Nginx.
+Notes:
+	Nginx is optional. Necessary only if want load balance or proxy-pass (save port)
+Refer to 
+	http://www.haorooms.com/post/4pz
+	http://www.jb51.net/article/60524.htm
+p.s. Supervisor is an option for development.
+Refer to setup.txt in script dir for instalaion of Nginx and Supervisor
+-----------------------------------------
+# Install forever
+sudo npm install forever -g
+# make js runable
+add this line at the beginning of main.js 
+   #!/usr/bin/env node
+sudo chmod +x main.js
+# Start App with forever
+sudo forever start main.js
+sudo forever stop main.js
+sudo forever restart main.js
+sudo forever list
+
+# Optional configuring Nginx
+## Add DNS for iot.xlight.ca
+sudo nano /etc/nginx/sites-available/default
+
+# Xlight IoT Demo
+server {
+        listen 8080;
+        server_name iot.xlight.ca;
+#        root /home/ubuntu/spark-server;
+#        index index.html index.htm;
+
+       location / {
+         proxy_pass http://127.0.0.1:8080;
+         try_files $uri $uri/ =404;
+       }
+}
+
+sudo service nginx restart
+
+
+----------------------------------------------------------------------------------
+Got error, it was said to be a compatible problem of NodeJS (should be OK < V0.10).
+So one solution is to setup a lower version NodeJS in virtualenv, Nodeenv or NAVE, refer to
+http://kartoza.com/nodeenv-how-to-install-nodejs-in-a-python-virtualenv/
+https://lincolnloop.com/blog/installing-nodejs-and-npm-python-virtualenv/
+https://www.quora.com/Is-there-a-virtualenv-equivalent-for-node
+
+However, I decided to look into the code and try to fix the bugs, cuz we need to 
+customize the private cloud anyway.
+Focus on:
+1. spark-protocol
+
+----------------------------------------------------------------------------------
+error, refer to
+https://community.particle.io/t/spark-server-cryptostream-transform-error/13890/5
+https://community.particle.io/t/cryptostream-errors-from-local-cloud-connected-photon/13671
+
+onSocketData called, but no data sent.
+1: Core disconnected: socket close false { coreID: '290024001547343339383037',
+  cache_key: '_55',
+  duration: 25.034 }
+Session ended for _55
+Connection from: ::ffff:206.174.180.2, connId: 57
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+on ready { coreID: '290024001547343339383037',
+  ip: '::ffff:206.174.180.2',
+  product_id: 6,
+  firmware_version: 65535,
+  cache_key: '_56' }
+Core online!
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+Coap Error: Error: Invalid CoAP version. Expected 1, got: 2
+routeMessage got a NULL coap message  { coreID: '290024001547343339383037' }
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+CryptoStream transform error Error: error:06065064:digital envelope routines:EVP_DecryptFinal_ex:bad decrypt
+Coap Error: Error: Invalid CoAP version. Expected 1, got: 2
+routeMessage got a NULL coap message  { coreID: '290024001547343339383037' }
+
+onSocketData called, but no data sent.
+1: Core disconnected: socket close false { coreID: '290024001547343339383037',
+  cache_key: '_61',
+  duration: 25.035 }
+Session ended for _61
+Connection from: ::ffff:206.174.180.2, connId: 63
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+on ready { coreID: '290024001547343339383037',
+  ip: '::ffff:206.174.180.2',
+  product_id: 6,
+  firmware_version: 65535,
+  cache_key: '_62' }
+Core online!
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+Coap Error: Error: Invalid CoAP version. Expected 1, got: 0
+routeMessage got a NULL coap message  { coreID: '290024001547343339383037' }
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+CryptoStream transform error Error: error:06065064:digital envelope routines:EVP_DecryptFinal_ex:bad decrypt
+Coap Error: Error: Unknown message code: 234
+routeMessage got a NULL coap message  { coreID: '290024001547343339383037' }
+onSocketData called, but no data sent.
+1: Core disconnected: socket close false { coreID: '290024001547343339383037',
+  cache_key: '_62',
+  duration: 25.035 }
+Session ended for _62
+Connection from: ::ffff:206.174.180.2, connId: 64
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+on ready { coreID: '290024001547343339383037',
+  ip: '::ffff:206.174.180.2',
+  product_id: 6,
+  firmware_version: 65535,
+  cache_key: '_63' }
+Core online!
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+Coap Error: Error: Invalid CoAP version. Expected 1, got: 3
+routeMessage got a NULL coap message  { coreID: '290024001547343339383037' }
+CryptoStream transform error TypeError: Cannot read property 'length' of null
+CryptoStream transform error Error: error:06065064:digital envelope routines:EVP_DecryptFinal_ex:bad decrypt
+Coap Error: Error: Invalid CoAP version. Expected 1, got: 3
+routeMessage got a NULL coap message  { coreID: '290024001547343339383037' }
+
+debug descResult: ["O59DhTXstG67N/iN6JQM0zhs5uwtogXV_2",{"cmd":"DescribeReturn","state":{"f":[],"v":{},"p":6,"m":[{"s":16384,"l":"m","vc":30,"vv":30,"f":"b","n":"0","v":7,"d":[]},{"s":262144,"l":"m","vc":30,"vv":30,"f":"s","n":"1","v":17,"d":[]},{"s":262144,"l":"m","vc":30,"vv":30,"f":"s","n":"2","v":17,"d":[{"f":"s","n":"1","v":17,"_":""}]},{"s":131072,"l":"m","vc":30,"vv":30,"u":"B26131CF156F707F50128ED486D5936D466281FD387C15182E9292E589F48860","f":"u","n":"1","v":4,"d":[{"f":"s","n":"2","v":17,"_":""}]},{"s":131072,"l":"f","vc":30,"vv":0,"d":[]}]},"product_id":6,"firmware_version":65535}]
+{
+  "id": "290024001547343339383037",
+  "name": null,
+  "last_app": null,
+  "connected": {
+    "f": [],
+    "v": {},
+    "p": 6,
+    "m": [
+      {
+        "s": 16384,
+        "l": "m",
+        "vc": 30,
+        "vv": 30,
+        "f": "b",
+        "n": "0",
+        "v": 7,
+        "d": []
+      },
+      {
+        "s": 262144,
+        "l": "m",
+        "vc": 30,
+        "vv": 30,
+        "f": "s",
+        "n": "1",
+        "v": 17,
+        "d": []
+      },
+      {
+        "s": 262144,
+        "l": "m",
+        "vc": 30,
+        "vv": 30,
+        "f": "s",
+        "n": "2",
+        "v": 17,
+        "d": [
+          {
+            "f": "s",
+            "n": "1",
+            "v": 17,
+            "_": ""
+          }
+        ]
+      },
+      {
+        "s": 131072,
+        "l": "m",
+        "vc": 30,
+        "vv": 30,
+        "u": "B26131CF156F707F50128ED486D5936D466281FD387C15182E9292E589F48860",
+        "f": "u",
+        "n": "1",
+        "v": 4,
+        "d": [
+          {
+            "f": "s",
+            "n": "2",
+            "v": 17,
+            "_": ""
+          }
+        ]
+      },
+      {
+        "s": 131072,
+        "l": "f",
+        "vc": 30,
+        "vv": 0,
+        "d": []
+      }
+    ]
+  },
+  "variables": {},
+  "functions": []
+}
