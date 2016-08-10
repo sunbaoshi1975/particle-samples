@@ -2,6 +2,8 @@
 Install Spark-server on AWS Ubuntu
 Refer to https://community.particle.io/t/tutorial-local-cloud-1st-time-instructions-01-oct-15/5589
 -----------------------------------------
+ps -ef | grep "main.js" | grep -v "grep" | awk '{print $2}' | xargs kill -9
+
 1. Install Nodejs
 sudo apt-get purge nodejs npm
 sudo apt-get update
@@ -78,7 +80,9 @@ particle keys server cloud_public.der
 particle keys doctor 290024001547343339383037
 particle keys send 290024001547343339383037 290024001547343339383037_rsa_new.pub.pem
 # has backup
-particle keys load 290024001547343339383037.der
+particle keys load 290024001547343339383037_rsa_new.der
+dfu-util -d 2b04:d006 -a 1 -s 34 -D 290024001547343339383037_rsa_new.der
+dfu-util -d 2b04:d006 -a 1 -s 2082 -D cloud_public.der
 # Workaround
 mkdir recover
 cd recover
@@ -128,10 +132,14 @@ curl -X PUT http://iot.xlight.ca:8080/v1/devices/290024001547343339383037 -d nam
 curl https://api.particle.io/v1/devices/290024001547343339383037/lastMsg?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
 curl https://api.particle.io/v1/devices/290024001547343339383037/sysID?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
 
+curl http://iot.xlight.ca:8080/v1/devices/290024001547343339383037/LastMessage?access_token=b528b7716896b1a9667478a633b43b74d0e879c9
 curl http://iot.xlight.ca:8080/v1/devices/290024001547343339383037/sysID?access_token=b528b7716896b1a9667478a633b43b74d0e879c9
 
-# Call a function: PowerSwitch
+# Call a function: PowerSwitch, CloudCmd
 curl https://api.particle.io/v1/devices/290024001547343339383037/PowerSwitch -d arg="on" -d access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
+
+# arg="T/R/Q/D/N"
+curl http://iot.xlight.ca:8080/v1/devices/290024001547343339383037/CloudCmd -d arg="D" -d access_token=b528b7716896b1a9667478a633b43b74d0e879c9
 
 
 -----------------------------------------
@@ -257,81 +265,3 @@ CryptoStream transform error TypeError: Cannot read property 'length' of null
 CryptoStream transform error Error: error:06065064:digital envelope routines:EVP_DecryptFinal_ex:bad decrypt
 Coap Error: Error: Invalid CoAP version. Expected 1, got: 3
 routeMessage got a NULL coap message  { coreID: '290024001547343339383037' }
-
-debug descResult: ["O59DhTXstG67N/iN6JQM0zhs5uwtogXV_2",{"cmd":"DescribeReturn","state":{"f":[],"v":{},"p":6,"m":[{"s":16384,"l":"m","vc":30,"vv":30,"f":"b","n":"0","v":7,"d":[]},{"s":262144,"l":"m","vc":30,"vv":30,"f":"s","n":"1","v":17,"d":[]},{"s":262144,"l":"m","vc":30,"vv":30,"f":"s","n":"2","v":17,"d":[{"f":"s","n":"1","v":17,"_":""}]},{"s":131072,"l":"m","vc":30,"vv":30,"u":"B26131CF156F707F50128ED486D5936D466281FD387C15182E9292E589F48860","f":"u","n":"1","v":4,"d":[{"f":"s","n":"2","v":17,"_":""}]},{"s":131072,"l":"f","vc":30,"vv":0,"d":[]}]},"product_id":6,"firmware_version":65535}]
-{
-  "id": "290024001547343339383037",
-  "name": null,
-  "last_app": null,
-  "connected": {
-    "f": [],
-    "v": {},
-    "p": 6,
-    "m": [
-      {
-        "s": 16384,
-        "l": "m",
-        "vc": 30,
-        "vv": 30,
-        "f": "b",
-        "n": "0",
-        "v": 7,
-        "d": []
-      },
-      {
-        "s": 262144,
-        "l": "m",
-        "vc": 30,
-        "vv": 30,
-        "f": "s",
-        "n": "1",
-        "v": 17,
-        "d": []
-      },
-      {
-        "s": 262144,
-        "l": "m",
-        "vc": 30,
-        "vv": 30,
-        "f": "s",
-        "n": "2",
-        "v": 17,
-        "d": [
-          {
-            "f": "s",
-            "n": "1",
-            "v": 17,
-            "_": ""
-          }
-        ]
-      },
-      {
-        "s": 131072,
-        "l": "m",
-        "vc": 30,
-        "vv": 30,
-        "u": "B26131CF156F707F50128ED486D5936D466281FD387C15182E9292E589F48860",
-        "f": "u",
-        "n": "1",
-        "v": 4,
-        "d": [
-          {
-            "f": "s",
-            "n": "2",
-            "v": 17,
-            "_": ""
-          }
-        ]
-      },
-      {
-        "s": 131072,
-        "l": "f",
-        "vc": 30,
-        "vv": 0,
-        "d": []
-      }
-    ]
-  },
-  "variables": {},
-  "functions": []
-}
