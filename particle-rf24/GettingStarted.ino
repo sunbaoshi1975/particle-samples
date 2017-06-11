@@ -40,7 +40,7 @@
 
 /****************** User Config ***************************/
 /* Hardware configuration: Set up nRF24L01 radio on SPI bus plus pins D6 & A2 */
-RF24 radio(D6,A2);
+RF24 radio(A0,A2);
 
 //RF24 radio(A0,A2);
 /**********************************************************/
@@ -135,7 +135,7 @@ void setup() {
     radio.openWritingPipe(pipes[0]);
     radio.openReadingPipe(1,pipes[1]);
   }
-  else if ( role == role_ping_out )
+  else if ( role == role_pong_back )
   {
     radio.openWritingPipe(pipes[1]);
     radio.openReadingPipe(1,pipes[0]);

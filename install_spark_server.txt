@@ -1,3 +1,45 @@
+
+https://iot.xlight.io --> http://123.207.166.211:8080
+jinyangqiao@163.com / 123456
+coreid:  4b0050000651363036373538
+
+http://admin.xlight.io/login.html
+http://58.87.101.35:8021
+405@dtit.com / 123456
+
+-----------------------------------------
+新P1入网（连公有云；升级Firmware；切私有云）：
+配置Wi-Fi参数;
+
+如果P1无法启动：
+1. 进入Listening模式（长按setup 10秒，蓝色快闪）；
+2. 记录CoreID： Particle serial identify （注意观察fireware版本是否小于0.6.0）
+3. 写P1_tinker.bin: Particle flash --serial p1_tinker.bin
+
+如果无法连公有云(确认Wi-Fi参数正确)
+1. particle keys server cloud_public.der
+2. particle keys doctor [CoreID]
+
+刷程序，升级Firmware： 
+用Particle Dev在云端编译程序（注意选择firewire版本0.6.0），刷新。然后P1会反复启动若干次，然后连接公网。
+
+切换到私有云：
+particle config xlight apiUrl "http://iot.xlight.io:8080"
+particle config xlight
+particle config identify
+-- 进入DFU模式（确认default_key.pub.pem为对应服务器的key）
+particle keys server default_key.pub.pem iot.xlight.io
+particle keys doctor [CoreID]
+
+-----------------------------------------
+
+particle flash --usb tinker
+particle flash --serial tinker
+particle flash --serial p1_tinker.bin
+
+particle compile p1 XlightSmartController --target 0.6.0 --saveto xsc.bin
+particle compile p1 XlightSmartController --target 0.6.1 --saveto xsc_061.bin
+
 -----------------------------------------
 Install Spark-server on AWS Ubuntu
 Refer to https://community.particle.io/t/tutorial-local-cloud-1st-time-instructions-01-oct-15/5589
@@ -40,6 +82,8 @@ refer to https://docs.particle.io/support/troubleshooting/cloud-solutions/photon
 1. Create a new server profile for the private cloud
 particle config xlight apiUrl "http://52.3.103.94:8080"
 # particle config xlight apiUrl "http://iot.xlight.ca:8080"
+particle config xlight apiUrl "http://iot.xlight.io"
+particle config xlight apiUrl "http://123.207.166.211:8080"
 
 2. Point to the private cloud and check it
 particle config xlight
@@ -54,6 +98,8 @@ Ctrl+C
 -----------------------------------------
 Point Photon to private cloud, only at local
 -----------------------------------------
+!!!Notes: now we only need to run ParticleCLISetup, which installs driver, dfu-util, SSL and Particle-cli in one.
+
 # 0. Install dfu-util, OpenSSL
 # refer to https://docs.particle.io/support/troubleshooting/troubleshooting-tools/photon/#dfu-commands
 # and http://blog.jongallant.com/2015/08/particle-photon-firmware-flash-windows.html
@@ -68,17 +114,25 @@ Hold SETUP -> press RESET -> Wait for flashing yellow -> release SETUP
 3. Backup current keys
 particle keys save 290024001547343339383037_old.der
 
+1e003d001747343337363432
+
+2d0027001647343432313031   // Red board
+530037000551363034353731
+particle keys save 2d0027001647343432313031_old.der
+
 4. Change server keys to private cloud key + IP_ADDRESS
 particle keys server default_key.pub.pem 52.3.103.94
 particle keys doctor 290024001547343339383037
 #particle keys load 290024001547343339383037.der
+
+particle keys doctor 2d0027001647343432313031
 
 To recover, refer to: https://community.particle.io/t/photon-setup-flashing-cyan-with-a-quick-red-burst-now-orange-burst/12118/24
 particle config particle
 # no backup
 particle keys server cloud_public.der
 particle keys doctor 290024001547343339383037
-particle keys send 290024001547343339383037 290024001547343339383037_rsa_new.pub.pem
+par 290024001547343339383037 290024001547343339383037_rsa_new.pub.pem
 # has backup
 particle keys load 290024001547343339383037_rsa_new.der
 dfu-util -d 2b04:d006 -a 1 -s 34 -D 290024001547343339383037_rsa_new.der
@@ -92,6 +146,21 @@ dfu-util -d 2b04:d006 -a 1 -s 2082 -D cloud_public.der
 particle keys send 290024001547343339383037 device.pub.pem
 ## then reset
 particle serial wifi
+
+P1 DFU COMMANDS:
+
+System Part 1
+dfu-util -d 2b04:d008 -a 0 -s 0x8020000 -D system-part1.bin
+System Part-2
+dfu-util -d 2b04:d008 -a 0 -s 0x8060000:leave -D system-part2.bin
+User firmware
+dfu-util -d 2b04:d008 -a 0 -s 0x80A0000 -D user-firmware.bin
+Factory reset firmware
+dfu-util -d 2b04:d008 -a 0 -s 0x80E0000 -D factory-firmware.bin
+Particle cloud public key
+dfu-util -d 2b04:d008 -a 1 -s 2082 -D cloud_public.der
+Device private key
+dfu-util -d 2b04:d008 -a 1 -s 34 -D device-private.der
 
 
 5. Copy keys to AWS server core_keys
@@ -108,6 +177,12 @@ Access token: b528b7716896b1a9667478a633b43b74d0e879c9
 
 7. Reset Photon
 
+// DFU
+particle flash --usb tinker
+// Flashing Blue
+particle flash --serial tinker
+particle flash --serial p1_tinker.bin
+
 -----------------------------------------
 Test, refer to https://docs.particle.io/reference/api/
 -----------------------------------------
@@ -116,9 +191,12 @@ Particle
 2d7305a674134e4dde0547c25ceb8bc2fa0ff497
 e97a4b75d5b21afe4cab40b41e6d87e3ded1aa8a
 
+6d80612912b916761d1ee5722b6ae7666646f89d
+
 # Get Device List
 curl https://api.particle.io/v1/devices?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
 curl http://iot.xlight.ca:8080/v1/devices?access_token=b528b7716896b1a9667478a633b43b74d0e879c9
+
 
 # Get Device Info
 curl https://api.particle.io/v1/devices/290024001547343339383037?access_token=2d7305a674134e4dde0547c25ceb8bc2fa0ff497
@@ -141,7 +219,10 @@ curl https://api.particle.io/v1/devices/290024001547343339383037/PowerSwitch -d 
 # arg="T/R/Q/D/N"
 curl http://iot.xlight.ca:8080/v1/devices/290024001547343339383037/CloudCmd -d arg="D" -d access_token=b528b7716896b1a9667478a633b43b74d0e879c9
 
+curl http://iot.xlight.io:8080/v1/devices/550049000551363034353731/JSONConfig -d arg="{'op':2,'fl':0,'run':0,'uid':'c1','csc':1}" -d access_token=c8e49c0086cd861c9bc95bac4a7a172715b22d8a
 
+curl http://iot.xlight.io:8080/v1/devices/550049000551363034353731/JSONConfig -d arg="{'op':2,'fl':0,'run':0,'uid':'c1','node_id':65,'ncf':0,'value':0}" -d access_token=c8e49c0086cd861c9bc95bac4a7a172715b22d8a
+ 
 -----------------------------------------
 Deployment: use forever or PM2, combine with Nginx.
 Notes:
